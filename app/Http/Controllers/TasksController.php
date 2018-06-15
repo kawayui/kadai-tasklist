@@ -13,33 +13,40 @@ class TasksController extends Controller
      */
      public function index()
     {
-        $tasks = Task::all();
+       $data = [];
+        if (\Auth::check()) {
+            $user = \Auth::user();
+            $tasks = $user->tasks()->orderBy('created_at', 'desc')->paginate(10);
 
-        return view('tasks.index', [
-            'tasks' => $tasks,
-        ]);
+            $data = [
+                'user' => $user,
+                'tasks' => $tasks,
+            ];
+            
+            $data += $this->counts($user);
+           
+            return view('tasks.index', $data);
+        }else{
+            return view('welcome');
+        }
+        
     }
-
     /**
      * Show the form for creating a new resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+     public function create()
     {
+        IF (\Auth::check()) {
         $task = new Task;
 
         return view('tasks.create', [
             'task' => $task,
-        ]);
+        ]);}
+        return view('welcome');
     }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+   
    public function store(Request $request)
     {
         $this->validate($request, [
@@ -49,6 +56,7 @@ class TasksController extends Controller
         $task = new Task;
         $task->status = $request->status;
         $task->content = $request->content;
+        $task->user_id = \Auth::user()->id;
         $task->save();
         return redirect('/');
     }
@@ -60,13 +68,33 @@ class TasksController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function show($id)
-    {
-        $task = Task::find($id);
-
-        return view('tasks.show', [
-            'task' => $task,
-        ]);
-    }
+   {
+       if (\Auth::check()) {
+           $user = \Auth::user();
+           $task = Task::find($id);
+           
+           if ($task->user_id == $user->id) {
+                $task = Task::find($id);
+               
+               
+               return view('tasks.show', [
+                   'task' => $task,
+               ]);
+               
+           } 
+           
+           else {
+               
+               
+           }
+       } 
+       else {
+           
+          return view('welcome');
+       }
+       
+             
+   }
 
     /**
      * Show the form for editing the specified resource.
